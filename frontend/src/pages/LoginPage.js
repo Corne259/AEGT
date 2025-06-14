@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { Zap, Wallet, Smartphone } from 'lucide-react';
+import { Zap, Smartphone } from 'lucide-react';
 import WalletLogin from '../components/WalletLogin';
-import { useAuth } from '../hooks/useAuth';
 
 const LoginContainer = styled.div`
   min-height: 100vh;
@@ -132,7 +131,6 @@ const FeatureIcon = styled.div`
 `;
 
 const LoginPage = ({ onTelegramLogin, onWalletLogin }) => {
-  const { login } = useAuth();
 
   const handleTelegramLogin = () => {
     if (onTelegramLogin) {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useTonConnectUI } from '@tonconnect/ui-react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 
@@ -26,9 +26,8 @@ import './styles/App.css';
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [tonConnectUI] = useTonConnectUI();
   const { webApp, user: tgUser } = useTelegramWebApp();
-  const { user, login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated } = useAuth();
 
   useEffect(() => {
     let initTimeout;

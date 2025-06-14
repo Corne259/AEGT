@@ -7,11 +7,12 @@ import { upgradeAPI } from '../services/api';
 import { useTonConnect } from '../hooks/useTonConnect';
 import { useTelegramWebApp } from '../hooks/useTelegramWebApp';
 import TonPayment from '../components/TonPayment';
+import './UpgradeShop.css';
 
 const UpgradeShop = () => {
   const [selectedUpgrade, setSelectedUpgrade] = useState(null);
   const [showPayment, setShowPayment] = useState(false);
-  const { tonConnectUI, isConnected, walletAddress } = useTonConnect();
+  const { isConnected } = useTonConnect();
   const { hapticFeedback } = useTelegramWebApp();
   const queryClient = useQueryClient();
 

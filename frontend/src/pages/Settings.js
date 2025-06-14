@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { 
   Settings as SettingsIcon, 
   Moon, 
-  Sun, 
   Volume2, 
   Wallet, 
   User, 
@@ -20,6 +18,7 @@ import { useQuery } from 'react-query';
 import { useAuth } from '../hooks/useAuth';
 import { useTonConnect } from '../hooks/useTonConnect';
 import { userAPI, upgradeAPI } from '../services/api';
+import './Settings.css';
 
 const Settings = () => {
   const [darkMode, setDarkMode] = useState(true);

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TonConnect } from '@tonconnect/sdk';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { toast } from 'react-hot-toast';
 import { authAPI, api } from '../services/api';
@@ -10,7 +9,7 @@ const useTonConnect = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const { login: authLogin, updateUser } = useAuth();
+  const { updateUser } = useAuth();
 
   // Check connection status
   useEffect(() => {
@@ -101,7 +100,7 @@ const useTonConnect = () => {
     } finally {
       setIsConnecting(false);
     }
-  }, [tonConnectUI, generateChallenge, signChallenge]);
+  }, [tonConnectUI, generateChallenge, signChallenge, updateUser]);
 
   // Connect wallet to existing account
   const connectWalletToAccount = useCallback(async () => {

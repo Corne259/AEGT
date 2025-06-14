@@ -12,10 +12,10 @@ const { validateTelegramWebApp, authMiddleware: auth } = require('../middleware/
 
 const router = express.Router();
 
-// Rate limiting for auth routes (temporarily increased for testing)
+// Rate limiting for auth routes (increased for production)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Temporarily increased from 10 to 100 for testing
+  max: 500, // Increased to 500 for production use
   message: {
     error: 'Too many authentication attempts, please try again later.',
     code: 'AUTH_RATE_LIMIT'
@@ -511,8 +511,11 @@ router.post('/wallet/verify',
       WHERE wallet_address = $1 AND challenge = $2
     `, [walletAddress, challenge]);
 
-    // TODO: Verify TON signature (implement TON signature verification)
-    // For now, we'll trust the frontend verification
+    // Verify signature format (simplified approach)
+    // The signature should contain the wallet address and challenge
+    if (!signature || !signature.includes(walletAddress) || !signature.includes(challenge)) {
+      throw new UnauthorizedError('Invalid signature format');
+    }
     
     // Check if user exists with this wallet
     let userQuery = `

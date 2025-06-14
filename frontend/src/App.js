@@ -173,12 +173,16 @@ function App() {
   // Handle wallet login
   const handleWalletLogin = async (walletData) => {
     try {
-      // Set user data from wallet authentication
+      setIsLoading(true);
+      // The wallet authentication should have already set the auth token
+      // Just need to update the app state
       setIsInitialized(true);
       toast.success('Welcome to Aegisum!');
     } catch (error) {
       console.error('Wallet login failed:', error);
       toast.error('Wallet login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 

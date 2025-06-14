@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Wallet, Loader } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import useTonConnect from '../hooks/useTonConnect';
 import { useAuth } from '../hooks/useAuth';
 
@@ -100,11 +101,18 @@ const WalletLogin = ({ onWalletLogin, showConnectOption = false }) => {
     try {
       setIsAuthenticating(true);
       const result = await connectWallet();
-      if (onWalletLogin) {
-        onWalletLogin(result);
+      
+      // If we got a token, the user is now authenticated
+      if (result && result.token) {
+        if (onWalletLogin) {
+          onWalletLogin(result);
+        }
+      } else {
+        throw new Error('Authentication failed - no token received');
       }
     } catch (error) {
       console.error('Wallet login failed:', error);
+      toast.error('Wallet login failed. Please try again.');
     } finally {
       setIsAuthenticating(false);
     }

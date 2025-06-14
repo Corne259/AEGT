@@ -51,6 +51,10 @@ export const authAPI = {
   login: (userData) => api.post('/auth/login', userData),
   me: () => api.get('/auth/me'),
   refresh: () => api.post('/auth/refresh'),
+  // TON Wallet authentication
+  walletChallenge: (data) => api.post('/auth/wallet/challenge', data),
+  walletVerify: (data) => api.post('/auth/wallet/verify', data),
+  walletConnect: (data) => api.post('/auth/wallet/connect', data),
 };
 
 // User API

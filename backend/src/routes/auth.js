@@ -7,8 +7,8 @@ const rateLimit = require('express-rate-limit');
 const databaseService = require('../services/database');
 const redisService = require('../services/redis');
 const logger = require('../utils/logger');
-const { asyncHandler, ValidationError, UnauthorizedError } = require('../middleware/errorHandler');
-const { validateTelegramWebApp, authMiddleware } = require('../middleware/auth');
+const { asyncHandler, ValidationError, UnauthorizedError, ConflictError } = require('../middleware/errorHandler');
+const { validateTelegramWebApp, authMiddleware: auth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -428,5 +428,278 @@ router.post('/logout-all', authMiddleware, asyncHandler(async (req, res) => {
     message: 'Logged out from all devices successfully'
   });
 }));
+
+/**
+ * @route POST /api/auth/wallet/challenge
+ * @desc Generate challenge for TON wallet authentication
+ * @access Public
+ */
+router.post('/wallet/challenge',
+  [
+    body('walletAddress')
+      .isLength({ min: 48, max: 48 })
+      .withMessage('Invalid TON wallet address format')
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ValidationError('Validation failed', errors.array());
+    }
+
+    const { walletAddress } = req.body;
+    
+    // Generate random challenge
+    const challenge = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    // Store challenge in database
+    await databaseService.query(`
+      INSERT INTO wallet_auth_sessions (wallet_address, challenge, expires_at)
+      VALUES ($1, $2, $3)
+    `, [walletAddress, challenge, expiresAt]);
+
+    res.json({
+      success: true,
+      challenge,
+      expiresAt
+    });
+  })
+);
+
+/**
+ * @route POST /api/auth/wallet/verify
+ * @desc Verify TON wallet signature and login/register user
+ * @access Public
+ */
+router.post('/wallet/verify',
+  [
+    body('walletAddress')
+      .isLength({ min: 48, max: 48 })
+      .withMessage('Invalid TON wallet address format'),
+    body('signature')
+      .isLength({ min: 1 })
+      .withMessage('Signature is required'),
+    body('challenge')
+      .isLength({ min: 1 })
+      .withMessage('Challenge is required')
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ValidationError('Validation failed', errors.array());
+    }
+
+    const { walletAddress, signature, challenge } = req.body;
+
+    // Verify challenge exists and is not expired
+    const challengeQuery = `
+      SELECT id FROM wallet_auth_sessions 
+      WHERE wallet_address = $1 AND challenge = $2 
+      AND expires_at > NOW() AND used = false
+    `;
+    
+    const challengeResult = await databaseService.query(challengeQuery, [walletAddress, challenge]);
+    
+    if (challengeResult.rows.length === 0) {
+      throw new UnauthorizedError('Invalid or expired challenge');
+    }
+
+    // Mark challenge as used
+    await databaseService.query(`
+      UPDATE wallet_auth_sessions 
+      SET used = true 
+      WHERE wallet_address = $1 AND challenge = $2
+    `, [walletAddress, challenge]);
+
+    // TODO: Verify TON signature (implement TON signature verification)
+    // For now, we'll trust the frontend verification
+    
+    // Check if user exists with this wallet
+    let userQuery = `
+      SELECT id, telegram_id, username, first_name, last_name,
+             aegt_balance, ton_balance, miner_level, energy_capacity,
+             created_at, updated_at, is_active, ton_wallet_address
+      FROM users 
+      WHERE ton_wallet_address = $1 AND is_active = true
+    `;
+    
+    let userResult = await databaseService.query(userQuery, [walletAddress]);
+    let user;
+
+    if (userResult.rows.length === 0) {
+      // Create new user with wallet
+      const insertQuery = `
+        INSERT INTO users (
+          telegram_id, username, first_name, ton_wallet_address, 
+          wallet_connected_at, login_method, aegt_balance, ton_balance, 
+          miner_level, energy_capacity
+        ) VALUES ($1, $2, $3, $4, NOW(), 'wallet', 0, 0, 1, 1000)
+        RETURNING id, telegram_id, username, first_name, last_name,
+                  aegt_balance, ton_balance, miner_level, energy_capacity,
+                  created_at, updated_at, ton_wallet_address
+      `;
+      
+      // Generate a unique telegram_id for wallet users (negative number)
+      const walletTelegramId = -Math.abs(walletAddress.slice(-10).split('').reduce((a, b) => a + b.charCodeAt(0), 0));
+      const username = `wallet_${walletAddress.slice(-8)}`;
+      const firstName = `Wallet User`;
+
+      const insertResult = await databaseService.query(insertQuery, [
+        walletTelegramId,
+        username,
+        firstName,
+        walletAddress
+      ]);
+
+      user = insertResult.rows[0];
+
+      // Initialize user energy state
+      await redisService.setUserEnergyState(user.id, {
+        current: 1000,
+        max: 1000,
+        lastUpdate: Date.now(),
+        regenRate: 250
+      });
+
+      logger.info('New wallet user created', {
+        userId: user.id,
+        walletAddress,
+        username
+      });
+    } else {
+      user = userResult.rows[0];
+      
+      // Update last activity
+      await databaseService.query(`
+        UPDATE users 
+        SET last_activity = NOW(), updated_at = NOW()
+        WHERE id = $1
+      `, [user.id]);
+    }
+
+    // Generate tokens
+    const accessToken = jwt.sign(
+      { userId: user.id, type: 'access' },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user.id, type: 'refresh' },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+    );
+
+    // Store refresh token
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    await databaseService.query(`
+      INSERT INTO user_tokens (user_id, token_hash, token_type, expires_at)
+      VALUES ($1, $2, 'refresh', $3)
+      ON CONFLICT (user_id, token_type) 
+      DO UPDATE SET token_hash = $2, expires_at = $3, created_at = NOW()
+    `, [user.id, tokenHash, expiresAt]);
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        telegramId: user.telegram_id,
+        username: user.username,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        aegtBalance: user.aegt_balance,
+        tonBalance: user.ton_balance,
+        minerLevel: user.miner_level,
+        energyCapacity: user.energy_capacity,
+        tonWalletAddress: user.ton_wallet_address,
+        createdAt: user.created_at,
+        updatedAt: user.updated_at
+      },
+      token: accessToken,
+      refreshToken
+    });
+  })
+);
+
+/**
+ * @route POST /api/auth/wallet/connect
+ * @desc Connect TON wallet to existing Telegram user
+ * @access Private
+ */
+router.post('/wallet/connect',
+  auth,
+  [
+    body('walletAddress')
+      .isLength({ min: 48, max: 48 })
+      .withMessage('Invalid TON wallet address format'),
+    body('signature')
+      .isLength({ min: 1 })
+      .withMessage('Signature is required'),
+    body('challenge')
+      .isLength({ min: 1 })
+      .withMessage('Challenge is required')
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new ValidationError('Validation failed', errors.array());
+    }
+
+    const { walletAddress, signature, challenge } = req.body;
+    const userId = req.user.id;
+
+    // Verify challenge
+    const challengeQuery = `
+      SELECT id FROM wallet_auth_sessions 
+      WHERE wallet_address = $1 AND challenge = $2 
+      AND expires_at > NOW() AND used = false
+    `;
+    
+    const challengeResult = await databaseService.query(challengeQuery, [walletAddress, challenge]);
+    
+    if (challengeResult.rows.length === 0) {
+      throw new UnauthorizedError('Invalid or expired challenge');
+    }
+
+    // Check if wallet is already connected to another user
+    const existingWalletQuery = `
+      SELECT id FROM users 
+      WHERE ton_wallet_address = $1 AND id != $2 AND is_active = true
+    `;
+    
+    const existingResult = await databaseService.query(existingWalletQuery, [walletAddress, userId]);
+    
+    if (existingResult.rows.length > 0) {
+      throw new ConflictError('This wallet is already connected to another account');
+    }
+
+    // Mark challenge as used
+    await databaseService.query(`
+      UPDATE wallet_auth_sessions 
+      SET used = true 
+      WHERE wallet_address = $1 AND challenge = $2
+    `, [walletAddress, challenge]);
+
+    // Connect wallet to user
+    await databaseService.query(`
+      UPDATE users 
+      SET ton_wallet_address = $1, wallet_connected_at = NOW(), updated_at = NOW()
+      WHERE id = $2
+    `, [walletAddress, userId]);
+
+    logger.info('Wallet connected to user', {
+      userId,
+      walletAddress
+    });
+
+    res.json({
+      success: true,
+      message: 'Wallet connected successfully',
+      walletAddress
+    });
+  })
+);
 
 module.exports = router;

@@ -7,6 +7,7 @@ import { toast } from 'react-hot-toast';
 // Components
 import Layout from './components/Layout';
 import LoadingScreen from './components/LoadingScreen';
+import LoginPage from './pages/LoginPage';
 import MiningDashboard from './pages/MiningDashboard';
 import UpgradeShop from './pages/UpgradeShop';
 import Wallet from './pages/Wallet';
@@ -158,18 +159,41 @@ function App() {
     };
   }, [webApp, tgUser, login]);
 
+  // Handle Telegram login
+  const handleTelegramLogin = () => {
+    // This will trigger the existing initialization logic
+    if (webApp || tgUser) {
+      setIsLoading(true);
+      setIsInitialized(false);
+    } else {
+      toast.error('Please open this app through Telegram');
+    }
+  };
+
+  // Handle wallet login
+  const handleWalletLogin = async (walletData) => {
+    try {
+      // Set user data from wallet authentication
+      setIsInitialized(true);
+      toast.success('Welcome to Aegisum!');
+    } catch (error) {
+      console.error('Wallet login failed:', error);
+      toast.error('Wallet login failed. Please try again.');
+    }
+  };
+
   // Show loading screen while initializing
-  if (isLoading || !isInitialized) {
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
-  // Redirect to mining dashboard if not authenticated
-  if (!isAuthenticated) {
+  // Show login page if not authenticated
+  if (!isAuthenticated || !isInitialized) {
     return (
-      <div className="error-container">
-        <h2>Authentication Required</h2>
-        <p>Please open this app through Telegram.</p>
-      </div>
+      <LoginPage 
+        onTelegramLogin={handleTelegramLogin}
+        onWalletLogin={handleWalletLogin}
+      />
     );
   }
 

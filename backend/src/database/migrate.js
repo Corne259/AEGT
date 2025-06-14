@@ -202,6 +202,33 @@ const migrations = [
       ('ton_to_energy_rate', '1000', 'Energy amount per 1 TON for refills')
       ON CONFLICT (key) DO NOTHING;
     `
+  },
+  {
+    version: 11,
+    name: 'add_ton_wallet_support',
+    sql: `
+      -- Add TON wallet address to users table
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS ton_wallet_address VARCHAR(48),
+      ADD COLUMN IF NOT EXISTS wallet_connected_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS login_method VARCHAR(20) DEFAULT 'telegram';
+      
+      -- Create index for wallet address lookups
+      CREATE INDEX IF NOT EXISTS idx_users_ton_wallet ON users(ton_wallet_address);
+      
+      -- Create table for wallet authentication sessions
+      CREATE TABLE IF NOT EXISTS wallet_auth_sessions (
+        id SERIAL PRIMARY KEY,
+        wallet_address VARCHAR(48) NOT NULL,
+        challenge VARCHAR(64) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_wallet_auth_challenge ON wallet_auth_sessions(challenge);
+      CREATE INDEX IF NOT EXISTS idx_wallet_auth_expires ON wallet_auth_sessions(expires_at);
+    `
   }
 ];
 

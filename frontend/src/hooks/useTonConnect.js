@@ -179,4 +179,5 @@ const useTonConnect = () => {
   };
 };
 
+export { useTonConnect };
 export default useTonConnect;

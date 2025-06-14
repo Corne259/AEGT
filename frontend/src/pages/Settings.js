@@ -25,7 +25,7 @@ const Settings = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const { user, logout } = useAuth();
-  const { wallet, tonConnectUI } = useTonConnect();
+  const { isConnected, walletAddress, tonConnectUI } = useTonConnect();
 
   // Fetch user stats
   const { data: userStats } = useQuery(
@@ -101,7 +101,7 @@ const Settings = () => {
             TON Wallet
           </h3>
           <div className="wallet-info">
-            {wallet ? (
+            {isConnected ? (
               <div className="wallet-connected">
                 <div className="wallet-status">
                   <CheckCircle size={16} className="status-icon connected" />
@@ -109,9 +109,9 @@ const Settings = () => {
                 </div>
                 <div className="wallet-details">
                   <div className="wallet-address">
-                    <span>{formatAddress(wallet.account.address)}</span>
+                    <span>{formatAddress(walletAddress)}</span>
                     <button 
-                      onClick={() => copyToClipboard(wallet.account.address)}
+                      onClick={() => copyToClipboard(walletAddress)}
                       className="copy-btn"
                     >
                       <Copy size={14} />

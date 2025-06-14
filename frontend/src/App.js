@@ -67,8 +67,8 @@ function App() {
         
         const userData = await initializeUser(initData);
 
-        // Login user
-        await login(userData);
+        // Login user (only send telegramId for login)
+        await login({ telegramId: userData.user.telegramId });
 
         setIsInitialized(true);
         toast.success('Welcome to Aegisum!');
@@ -126,8 +126,8 @@ function App() {
         
         const userData = await initializeUser(initData);
 
-        // Login user
-        await login(userData);
+        // Login user (only send telegramId for login)
+        await login({ telegramId: userData.user.telegramId });
 
         setIsInitialized(true);
         toast.success('Welcome to Aegisum!');

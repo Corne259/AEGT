@@ -52,11 +52,14 @@ const useTonConnect = () => {
     try {
       setIsConnecting(true);
       
-      // Connect to wallet
-      await tonConnectUI.connectWallet();
-      
+      // Check if wallet is already connected
       if (!tonConnectUI.connected) {
-        throw new Error('Failed to connect wallet');
+        // Connect to wallet only if not already connected
+        await tonConnectUI.connectWallet();
+        
+        if (!tonConnectUI.connected) {
+          throw new Error('Failed to connect wallet');
+        }
       }
 
       const address = tonConnectUI.account.address;

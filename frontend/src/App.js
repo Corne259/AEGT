@@ -32,17 +32,22 @@ function App() {
 
   useEffect(() => {
     let initTimeout;
+    let hasInitialized = false;
     
     const initializeApp = async () => {
+      if (hasInitialized || isInitialized) return; // Prevent multiple initializations
+      
       try {
         // Wait for Telegram WebApp to be ready, but with timeout
         if (!webApp || !tgUser) {
           // If we've been waiting too long, try with fallback data
           if (!initTimeout) {
             initTimeout = setTimeout(() => {
-              console.warn('Telegram WebApp not ready, using fallback initialization');
-              initializeWithFallback();
-            }, 5000); // 5 second timeout
+              if (!hasInitialized) {
+                console.warn('Telegram WebApp not ready, using fallback initialization');
+                initializeWithFallback();
+              }
+            }, 3000); // Reduced to 3 seconds
           }
           return;
         }
@@ -52,6 +57,8 @@ function App() {
           clearTimeout(initTimeout);
           initTimeout = null;
         }
+
+        hasInitialized = true;
 
         // Initialize user in backend
         const initData = {
@@ -72,20 +79,29 @@ function App() {
         await login({ telegramId: userData.user.telegramId });
 
         setIsInitialized(true);
-        toast.success('Welcome to Aegisum!');
+        // Only show welcome message once
+        if (!localStorage.getItem('welcomed')) {
+          toast.success('Welcome to Aegisum!');
+          localStorage.setItem('welcomed', 'true');
+        }
       } catch (error) {
         console.error('Failed to initialize app:', error);
-        toast.error('Failed to initialize app. Please try again.');
-        // Try fallback initialization
-        initializeWithFallback();
+        if (!hasInitialized) {
+          toast.error('Failed to initialize app. Please try again.');
+          // Try fallback initialization
+          initializeWithFallback();
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     const initializeWithFallback = async () => {
+      if (hasInitialized || isInitialized) return; // Prevent multiple initializations
+      
       try {
         console.log('Attempting fallback initialization...');
+        hasInitialized = true;
         
         // Try to get user data from URL parameters (Telegram WebApp sometimes passes data this way)
         const urlParams = new URLSearchParams(window.location.search);
@@ -131,24 +147,34 @@ function App() {
         await login({ telegramId: userData.user.telegramId });
 
         setIsInitialized(true);
-        toast.success('Welcome to Aegisum!');
+        // Only show welcome message once
+        if (!localStorage.getItem('welcomed')) {
+          toast.success('Welcome to Aegisum!');
+          localStorage.setItem('welcomed', 'true');
+        }
       } catch (error) {
         console.error('Fallback initialization failed:', error);
-        toast.error('Failed to initialize app. Please try again.');
+        if (!hasInitialized) {
+          toast.error('Failed to initialize app. Please try again.');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Start initialization
-    if (webApp || tgUser) {
-      initializeApp();
-    } else {
-      // If no Telegram data available, start timeout immediately
-      initTimeout = setTimeout(() => {
-        console.warn('No Telegram WebApp detected, using fallback');
-        initializeWithFallback();
-      }, 2000); // 2 second timeout for fallback
+    // Start initialization only once
+    if (!isInitialized && !hasInitialized) {
+      if (webApp || tgUser) {
+        initializeApp();
+      } else {
+        // If no Telegram data available, start timeout immediately
+        initTimeout = setTimeout(() => {
+          if (!hasInitialized) {
+            console.warn('No Telegram WebApp detected, using fallback');
+            initializeWithFallback();
+          }
+        }, 2000); // 2 second timeout for fallback
+      }
     }
 
     // Cleanup
@@ -157,7 +183,7 @@ function App() {
         clearTimeout(initTimeout);
       }
     };
-  }, [webApp, tgUser, login]);
+  }, []); // Empty dependency array to run only once
 
   // Handle Telegram login
   const handleTelegramLogin = () => {
@@ -177,7 +203,11 @@ function App() {
       // The wallet authentication should have already set the auth token
       // Just need to update the app state
       setIsInitialized(true);
-      toast.success('Welcome to Aegisum!');
+      // Only show welcome message once
+      if (!localStorage.getItem('welcomed')) {
+        toast.success('Welcome to Aegisum!');
+        localStorage.setItem('welcomed', 'true');
+      }
     } catch (error) {
       console.error('Wallet login failed:', error);
       toast.error('Wallet login failed. Please try again.');

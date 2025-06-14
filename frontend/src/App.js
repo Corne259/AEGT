@@ -30,21 +30,35 @@ function App() {
   const { user, login, isAuthenticated } = useAuth();
 
   useEffect(() => {
+    let initTimeout;
+    
     const initializeApp = async () => {
       try {
-        // Wait for Telegram WebApp to be ready
+        // Wait for Telegram WebApp to be ready, but with timeout
         if (!webApp || !tgUser) {
-          setTimeout(initializeApp, 100);
+          // If we've been waiting too long, try with fallback data
+          if (!initTimeout) {
+            initTimeout = setTimeout(() => {
+              console.warn('Telegram WebApp not ready, using fallback initialization');
+              initializeWithFallback();
+            }, 5000); // 5 second timeout
+          }
           return;
+        }
+
+        // Clear timeout if we got the data
+        if (initTimeout) {
+          clearTimeout(initTimeout);
+          initTimeout = null;
         }
 
         // Initialize user in backend
         const userData = await initializeUser({
           telegramId: tgUser.id,
-          username: tgUser.username,
-          firstName: tgUser.first_name,
-          lastName: tgUser.last_name,
-          languageCode: tgUser.language_code,
+          username: tgUser.username || 'user',
+          firstName: tgUser.first_name || 'User',
+          lastName: tgUser.last_name || '',
+          languageCode: tgUser.language_code || 'en',
         });
 
         // Login user
@@ -55,12 +69,81 @@ function App() {
       } catch (error) {
         console.error('Failed to initialize app:', error);
         toast.error('Failed to initialize app. Please try again.');
+        // Try fallback initialization
+        initializeWithFallback();
       } finally {
         setIsLoading(false);
       }
     };
 
-    initializeApp();
+    const initializeWithFallback = async () => {
+      try {
+        console.log('Attempting fallback initialization...');
+        
+        // Try to get user data from URL parameters (Telegram WebApp sometimes passes data this way)
+        const urlParams = new URLSearchParams(window.location.search);
+        const tgWebAppData = urlParams.get('tgWebAppData');
+        
+        let fallbackUser = {
+          id: Date.now(), // Use timestamp as fallback ID
+          username: 'user' + Date.now().toString().slice(-6),
+          first_name: 'User',
+          last_name: '',
+          language_code: 'en'
+        };
+
+        // If we have Telegram data in URL, try to parse it
+        if (tgWebAppData) {
+          try {
+            const decodedData = decodeURIComponent(tgWebAppData);
+            const userData = JSON.parse(decodedData);
+            if (userData.user) {
+              fallbackUser = userData.user;
+            }
+          } catch (e) {
+            console.warn('Could not parse Telegram WebApp data from URL');
+          }
+        }
+
+        // Initialize user in backend
+        const userData = await initializeUser({
+          telegramId: fallbackUser.id,
+          username: fallbackUser.username,
+          firstName: fallbackUser.first_name,
+          lastName: fallbackUser.last_name || '',
+          languageCode: fallbackUser.language_code || 'en',
+        });
+
+        // Login user
+        await login(userData);
+
+        setIsInitialized(true);
+        toast.success('Welcome to Aegisum!');
+      } catch (error) {
+        console.error('Fallback initialization failed:', error);
+        toast.error('Failed to initialize app. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Start initialization
+    if (webApp || tgUser) {
+      initializeApp();
+    } else {
+      // If no Telegram data available, start timeout immediately
+      initTimeout = setTimeout(() => {
+        console.warn('No Telegram WebApp detected, using fallback');
+        initializeWithFallback();
+      }, 2000); // 2 second timeout for fallback
+    }
+
+    // Cleanup
+    return () => {
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
+    };
   }, [webApp, tgUser, login]);
 
   // Show loading screen while initializing

@@ -62,13 +62,16 @@ export const useTelegramWebApp = () => {
         }
       }, 100);
       
-      // Cleanup after 10 seconds
+      // Cleanup after 5 seconds
       setTimeout(() => {
         clearInterval(checkTelegram);
         if (!isReady) {
-          console.warn('Telegram WebApp not available');
-          // For development, create mock user
-          if (process.env.NODE_ENV === 'development') {
+          console.warn('Telegram WebApp not available after 5 seconds');
+          // Set ready to true so the app can continue with fallback
+          setIsReady(true);
+          
+          // For development or when WebApp is not available, create mock user
+          if (process.env.NODE_ENV === 'development' || !window.Telegram) {
             setUser({
               id: 123456789,
               first_name: 'Test',
@@ -76,10 +79,9 @@ export const useTelegramWebApp = () => {
               username: 'testuser',
               language_code: 'en'
             });
-            setIsReady(true);
           }
         }
-      }, 10000);
+      }, 5000);
     }
   }, [isReady]);
 

@@ -370,7 +370,7 @@ router.post('/refresh',
  * @desc Get current user info
  * @access Private
  */
-router.get('/me', authMiddleware, asyncHandler(async (req, res) => {
+router.get('/me', auth, asyncHandler(async (req, res) => {
   res.json({
     success: true,
     user: req.user
@@ -382,7 +382,7 @@ router.get('/me', authMiddleware, asyncHandler(async (req, res) => {
  * @desc Logout user and invalidate tokens
  * @access Private
  */
-router.post('/logout', authMiddleware, asyncHandler(async (req, res) => {
+router.post('/logout', auth, asyncHandler(async (req, res) => {
   // Delete user tokens
   await databaseService.query(
     'DELETE FROM user_tokens WHERE user_id = $1',
@@ -408,7 +408,7 @@ router.post('/logout', authMiddleware, asyncHandler(async (req, res) => {
  * @desc Logout from all devices
  * @access Private
  */
-router.post('/logout-all', authMiddleware, asyncHandler(async (req, res) => {
+router.post('/logout-all', auth, asyncHandler(async (req, res) => {
   // Delete all user tokens
   await databaseService.query(
     'DELETE FROM user_tokens WHERE user_id = $1',

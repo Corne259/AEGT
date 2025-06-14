@@ -12,10 +12,10 @@ const { validateTelegramWebApp, authMiddleware } = require('../middleware/auth')
 
 const router = express.Router();
 
-// Rate limiting for auth routes
+// Rate limiting for auth routes (temporarily increased for testing)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
+  max: 100, // Temporarily increased from 10 to 100 for testing
   message: {
     error: 'Too many authentication attempts, please try again later.',
     code: 'AUTH_RATE_LIMIT'

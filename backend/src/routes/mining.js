@@ -6,7 +6,7 @@ const miningService = require('../services/mining');
 const databaseService = require('../services/database');
 const logger = require('../utils/logger');
 const { asyncHandler, ValidationError } = require('../middleware/errorHandler');
-const { userRateLimit } = require('../middleware/auth');
+const { validateTelegramWebApp, authMiddleware: auth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -31,7 +31,7 @@ const router = express.Router();
  * @desc Start mining operation
  * @access Private
  */
-router.post('/start', asyncHandler(async (req, res) => {
+router.post('/start', auth, asyncHandler(async (req, res) => {
   const result = await miningService.startMining(req.user.id);
 
   res.json({
@@ -46,7 +46,7 @@ router.post('/start', asyncHandler(async (req, res) => {
  * @desc Stop mining operation
  * @access Private
  */
-router.post('/stop', asyncHandler(async (req, res) => {
+router.post('/stop', auth, asyncHandler(async (req, res) => {
   const result = await miningService.stopMining(req.user.id);
 
   res.json({
@@ -61,7 +61,7 @@ router.post('/stop', asyncHandler(async (req, res) => {
  * @desc Get current mining status
  * @access Private
  */
-router.get('/status', asyncHandler(async (req, res) => {
+router.get('/status', auth, asyncHandler(async (req, res) => {
   const status = await miningService.getMiningStatus(req.user.id);
 
   res.json({
@@ -302,7 +302,7 @@ router.get('/leaderboard',
  * @desc Get global mining statistics
  * @access Private
  */
-router.get('/stats', asyncHandler(async (req, res) => {
+router.get('/stats', auth, asyncHandler(async (req, res) => {
   const statsQuery = `
     SELECT
       COUNT(DISTINCT mb.user_id) as active_miners,

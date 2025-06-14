@@ -78,9 +78,9 @@ export const miningAPI = {
 
 // Upgrade API
 export const upgradeAPI = {
-  getUpgrades: () => api.get('/upgrades'),
-  purchaseUpgrade: (upgradeId, paymentData) => api.post(`/upgrades/${upgradeId}/purchase`, paymentData),
-  getUpgradeHistory: () => api.get('/upgrades/history'),
+  getAvailable: () => api.get('/upgrade/available'),
+  purchase: (data) => api.post('/upgrade/purchase', data),
+  getHistory: () => api.get('/upgrade/history'),
 };
 
 // Energy API

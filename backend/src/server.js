@@ -171,7 +171,7 @@ module.exports = app;
 
 // Telegram Bot Integration
 const TelegramBot = require('node-telegram-bot-api');
-const token = process.env.TELEGRAM_BOT_TOKEN || '7820209188:AAGWlH9P_49d15934bsyZGQdKE93r9ItWQ4';
+const token = process.env.TELEGRAM_BOT_TOKEN || '7820209188:AAEqvWuSJHjPlSnjVrS-xmiQIj0mvArL_8s';
 
 // Admin Telegram ID
 const ADMIN_TELEGRAM_ID = 1651155083;

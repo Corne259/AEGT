@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 // Create axios instance
 export const api = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
-    ? 'https://aegisum.co.za/api' 
+    ? 'https://webapp.aegisum.co.za/api' 
     : 'http://localhost:3001/api',
   timeout: 10000,
   headers: {

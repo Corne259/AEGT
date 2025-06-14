@@ -53,13 +53,19 @@ function App() {
         }
 
         // Initialize user in backend
-        const userData = await initializeUser({
+        const initData = {
           telegramId: tgUser.id,
           username: tgUser.username || 'user',
           firstName: tgUser.first_name || 'User',
-          lastName: tgUser.last_name || '',
           languageCode: tgUser.language_code || 'en',
-        });
+        };
+        
+        // Only include lastName if it has a value
+        if (tgUser.last_name && tgUser.last_name.trim()) {
+          initData.lastName = tgUser.last_name;
+        }
+        
+        const userData = await initializeUser(initData);
 
         // Login user
         await login(userData);
@@ -106,13 +112,19 @@ function App() {
         }
 
         // Initialize user in backend
-        const userData = await initializeUser({
+        const initData = {
           telegramId: fallbackUser.id,
           username: fallbackUser.username,
           firstName: fallbackUser.first_name,
-          lastName: fallbackUser.last_name || '',
           languageCode: fallbackUser.language_code || 'en',
-        });
+        };
+        
+        // Only include lastName if it has a value
+        if (fallbackUser.last_name && fallbackUser.last_name.trim()) {
+          initData.lastName = fallbackUser.last_name;
+        }
+        
+        const userData = await initializeUser(initData);
 
         // Login user
         await login(userData);

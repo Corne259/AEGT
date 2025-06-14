@@ -10,21 +10,21 @@ const { userRateLimit } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Rate limiting for mining operations
-const miningLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // Limit each user to 30 requests per minute
-  message: {
-    error: 'Too many mining requests, please try again later.',
-    code: 'MINING_RATE_LIMIT'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Rate limiting DISABLED for production testing
+// const miningLimiter = rateLimit({
+//   windowMs: 60 * 1000, // 1 minute
+//   max: 1000, // Very high limit
+//   message: {
+//     error: 'Too many mining requests, please try again later.',
+//     code: 'MINING_RATE_LIMIT'
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
 
-// Apply rate limiting to mining routes
-router.use(miningLimiter);
-router.use(userRateLimit(60, 60000)); // 60 requests per minute per user
+// Apply rate limiting to mining routes - DISABLED
+// router.use(miningLimiter);
+// router.use(userRateLimit(60, 60000)); // 60 requests per minute per user
 
 /**
  * @route POST /api/mining/start

@@ -69,15 +69,16 @@ if (process.env.NODE_ENV !== 'test') {
   }));
 }
 
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: { error: 'Too many requests from this IP, please try again later.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Rate limiting DISABLED for production testing
+// const limiter = rateLimit({
+//   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+//   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100000,
+//   message: { error: 'Too many requests from this IP, please try again later.' },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
 
-app.use('/api/', limiter);
+// app.use('/api/', limiter);
 
 app.get('/health', (req, res) => {
   res.status(200).json({

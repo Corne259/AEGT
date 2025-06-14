@@ -12,20 +12,20 @@ const { validateTelegramWebApp, authMiddleware: auth } = require('../middleware/
 
 const router = express.Router();
 
-// Rate limiting for auth routes (increased for production)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // Increased to 500 for production use
-  message: {
-    error: 'Too many authentication attempts, please try again later.',
-    code: 'AUTH_RATE_LIMIT'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Rate limiting DISABLED for production testing
+// const authLimiter = rateLimit({
+//   windowMs: 15 * 60 * 1000, // 15 minutes
+//   max: 10000, // Very high limit
+//   message: {
+//     error: 'Too many authentication attempts, please try again later.',
+//     code: 'AUTH_RATE_LIMIT'
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// });
 
-// Apply rate limiting to all auth routes
-router.use(authLimiter);
+// Apply rate limiting to all auth routes - DISABLED
+// router.use(authLimiter);
 
 // Validation rules
 const loginValidation = [

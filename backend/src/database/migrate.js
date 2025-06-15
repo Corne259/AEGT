@@ -229,6 +229,43 @@ const migrations = [
       CREATE INDEX IF NOT EXISTS idx_wallet_auth_challenge ON wallet_auth_sessions(challenge);
       CREATE INDEX IF NOT EXISTS idx_wallet_auth_expires ON wallet_auth_sessions(expires_at);
     `
+  },
+  {
+    version: 12,
+    name: 'update_referrals_and_users',
+    sql: `
+      -- Add referral code and referred_by to users table
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS referral_code VARCHAR(20) UNIQUE,
+      ADD COLUMN IF NOT EXISTS referred_by INTEGER REFERENCES users(id);
+      
+      -- Create index for referral lookups
+      CREATE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code);
+      CREATE INDEX IF NOT EXISTS idx_users_referred_by ON users(referred_by);
+      
+      -- Update referrals table structure
+      DROP TABLE IF EXISTS referrals;
+      CREATE TABLE referrals (
+        id SERIAL PRIMARY KEY,
+        referrer_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        referee_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        bonus_amount BIGINT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(referee_id)
+      );
+      
+      CREATE INDEX IF NOT EXISTS idx_referrals_referrer_id ON referrals(referrer_id);
+      CREATE INDEX IF NOT EXISTS idx_referrals_referee_id ON referrals(referee_id);
+      CREATE INDEX IF NOT EXISTS idx_referrals_created_at ON referrals(created_at);
+      
+      -- Update ton_transactions table to support more types
+      ALTER TABLE ton_transactions 
+      ALTER COLUMN transaction_type TYPE VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS type VARCHAR(50);
+      
+      -- Update existing transaction types
+      UPDATE ton_transactions SET type = transaction_type WHERE type IS NULL;
+    `
   }
 ];
 

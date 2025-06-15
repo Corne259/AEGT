@@ -18,6 +18,7 @@ const miningRoutes = require('./routes/mining');
 const upgradeRoutes = require('./routes/upgrade');
 const energyRoutes = require('./routes/energy');
 const tonRoutes = require('./routes/ton');
+const friendsRoutes = require('./routes/friends');
 const adminRoutes = require('./routes/admin');
 
 // Import services
@@ -96,6 +97,7 @@ app.use('/api/mining', authMiddleware, miningRoutes);
 app.use('/api/upgrades', authMiddleware, upgradeRoutes);
 app.use('/api/energy', authMiddleware, energyRoutes);
 app.use('/api/ton', authMiddleware, tonRoutes);
+app.use('/api/friends', authMiddleware, friendsRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.use('*', (req, res) => {

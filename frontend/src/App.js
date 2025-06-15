@@ -12,6 +12,8 @@ import MiningDashboard from './pages/MiningDashboard';
 import UpgradeShop from './pages/UpgradeShop';
 import Wallet from './pages/Wallet';
 import Settings from './pages/Settings';
+import Frens from './pages/Frens';
+import Stats from './pages/Stats';
 
 // Hooks
 import { useTelegramWebApp } from './hooks/useTelegramWebApp';
@@ -273,6 +275,32 @@ function App() {
                     transition={{ duration: 0.3 }}
                   >
                     <Wallet />
+                  </motion.div>
+                } 
+              />
+              <Route 
+                path="/frens" 
+                element={
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Frens />
+                  </motion.div>
+                } 
+              />
+              <Route 
+                path="/stats" 
+                element={
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Stats />
                   </motion.div>
                 } 
               />

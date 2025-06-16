@@ -31,7 +31,7 @@ const router = express.Router();
  * @desc Start mining operation
  * @access Private
  */
-router.post('/start', auth, asyncHandler(async (req, res) => {
+router.post("/start", authenticateToken, async (req, res) => {
   const result = await miningService.startMining(req.user.id);
 
   res.json({

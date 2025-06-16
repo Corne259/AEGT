@@ -95,17 +95,19 @@ const migrations = [
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT,
-        upgrade_type VARCHAR(50) NOT NULL, -- 'miner', 'energy', 'special'
-        level_requirement INTEGER DEFAULT 1,
-        cost_ton BIGINT NOT NULL,
-        benefit_value INTEGER NOT NULL,
-        benefit_type VARCHAR(50) NOT NULL, -- 'hashrate', 'energy_capacity', 'energy_regen'
+        type VARCHAR(50) NOT NULL, -- 'miner', 'energy', 'special'
+        level INTEGER DEFAULT 1,
+        cost_ton DECIMAL(10,9) NOT NULL,
+        cost_aegt BIGINT DEFAULT 0,
+        hashrate_boost INTEGER DEFAULT 0,
+        energy_boost INTEGER DEFAULT 0,
         is_active BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT NOW()
       );
       
-      CREATE INDEX IF NOT EXISTS idx_upgrades_type ON upgrades(upgrade_type);
+      CREATE INDEX IF NOT EXISTS idx_upgrades_type ON upgrades(type);
       CREATE INDEX IF NOT EXISTS idx_upgrades_active ON upgrades(is_active);
+      CREATE INDEX IF NOT EXISTS idx_upgrades_level ON upgrades(level);
     `
   },
   {

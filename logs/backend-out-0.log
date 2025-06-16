@@ -14377,3 +14377,4 @@
 2025-06-16T06:59:07: {"level":"info","message":"Mining service stopped","service":"aegisum-api","timestamp":"2025-06-16 06:59:07"}
 2025-06-16T06:59:07: {"level":"info","message":"Mining service stopped","service":"aegisum-api","timestamp":"2025-06-16 06:59:07"}
 2025-06-16T06:59:07: {"level":"info","message":"Graceful shutdown completed","service":"aegisum-api","timestamp":"2025-06-16 06:59:07"}
+2025-06-16T07:57:37: Server running on port 3001

@@ -128,14 +128,10 @@ const adminAuth = async (req, res, next) => {
     // First run regular auth
     await authMiddleware(req, res, () => {});
     
-    // Check if user is admin
-    const adminQuery = `
-      SELECT role FROM users WHERE id = $1 AND role = 'admin'
-    `;
+    // Check if user is admin (specific Telegram ID)
+    const adminTelegramIds = [1651155083]; // Add more admin IDs here if needed
     
-    const result = await databaseService.query(adminQuery, [req.user.id]);
-    
-    if (result.rows.length === 0) {
+    if (!adminTelegramIds.includes(req.user.telegramId)) {
       return res.status(403).json({
         error: 'Access denied. Admin privileges required.',
         code: 'ADMIN_REQUIRED'

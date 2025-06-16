@@ -24,7 +24,7 @@ const authMiddleware = async (req, res, next) => {
         SELECT 
           id, telegram_id, username, first_name, last_name,
           aegt_balance, ton_balance, miner_level, energy_capacity,
-          created_at, updated_at, is_active
+          referral_code, created_at, updated_at, is_active
         FROM users 
         WHERE id = $1 AND is_active = true
       `;
@@ -71,6 +71,7 @@ const authMiddleware = async (req, res, next) => {
         tonBalance: user.ton_balance,
         minerLevel: user.miner_level,
         energyCapacity: user.energy_capacity,
+        referralCode: user.referral_code,
         createdAt: user.created_at,
         updatedAt: user.updated_at
       };
